@@ -163,6 +163,7 @@ export type UserSettings = {
   desktopNotificationsEnabled?: boolean
   webSearch?: WebSearchSettings
   updateProxy?: Partial<UpdateProxySettings>
+  updateChecksEnabled?: boolean
   network?: {
     aiRequestTimeoutMs?: number
     proxy?: Partial<NetworkProxySettings>
@@ -172,11 +173,14 @@ export type UserSettings = {
   [key: string]: unknown
 }
 
-export type AppMode = 'default' | 'portable'
+export type AppMode = 'default' | 'custom' | 'portable'
 
 export type AppModeConfig = {
   mode: AppMode
-  portableDir: string | null
+  /** User-selected absolute data directory. Legacy app-mode records called this portable_dir. */
+  customDir: string | null
+  /** Install-adjacent data directory used by true portable mode. */
+  portableDataDir?: string | null
   activeConfigDir?: string | null
-  configDirSource?: 'system' | 'environment' | 'portable'
+  configDirSource?: 'system' | 'environment' | 'custom' | 'portable'
 }

@@ -640,7 +640,8 @@ describe('settingsStore app mode', () => {
   it('hydrates app mode from the Electron desktop host', async () => {
     const getAppMode = vi.fn().mockResolvedValue({
       mode: 'portable',
-      portableDir: 'D:\\cc-haha-data',
+      customDir: null,
+      portableDataDir: 'D:\\cc-haha-data',
       activeConfigDir: 'D:\\cc-haha-data',
       configDirSource: 'portable',
     })
@@ -653,7 +654,8 @@ describe('settingsStore app mode', () => {
     expect(getAppMode).toHaveBeenCalledTimes(1)
     expect(useSettingsStore.getState().appMode).toEqual({
       mode: 'portable',
-      portableDir: 'D:\\cc-haha-data',
+      customDir: null,
+      portableDataDir: 'D:\\cc-haha-data',
       activeConfigDir: 'D:\\cc-haha-data',
       configDirSource: 'portable',
     })
@@ -667,14 +669,14 @@ describe('settingsStore app mode', () => {
     useSettingsStore.setState({
       appMode: {
         mode: 'default',
-        portableDir: null,
+        customDir: null,
         activeConfigDir: 'C:\\Users\\test\\.claude',
         configDirSource: 'system',
       },
       appModeRequiresRestart: false,
     })
 
-    await expect(useSettingsStore.getState().setAppMode('portable')).rejects.toThrow('Choose an absolute custom data directory')
+    await expect(useSettingsStore.getState().setAppMode('custom')).rejects.toThrow('Choose an absolute custom data directory')
     expect(setAppMode).not.toHaveBeenCalled()
     expect(useSettingsStore.getState().appModeRequiresRestart).toBe(false)
   })
@@ -687,22 +689,22 @@ describe('settingsStore app mode', () => {
     useSettingsStore.setState({
       appMode: {
         mode: 'default',
-        portableDir: null,
+        customDir: null,
         activeConfigDir: 'C:\\Users\\test\\.claude',
         configDirSource: 'system',
       },
       appModeRequiresRestart: false,
     })
 
-    await useSettingsStore.getState().setAppMode('portable', 'D:\\portable-data')
+    await useSettingsStore.getState().setAppMode('custom', 'D:\\portable-data')
 
     expect(setAppMode).toHaveBeenCalledWith({
-      mode: 'portable',
-      portableDir: 'D:\\portable-data',
+      mode: 'custom',
+      customDir: 'D:\\portable-data',
     })
     expect(useSettingsStore.getState().appMode).toMatchObject({
-      mode: 'portable',
-      portableDir: 'D:\\portable-data',
+      mode: 'custom',
+      customDir: 'D:\\portable-data',
       activeConfigDir: 'C:\\Users\\test\\.claude',
       configDirSource: 'system',
     })
@@ -717,7 +719,7 @@ describe('settingsStore app mode', () => {
     const { useSettingsStore } = await import('./settingsStore')
     const prevAppMode = {
       mode: 'default' as const,
-      portableDir: null,
+      customDir: null,
       activeConfigDir: 'C:\\Users\\test\\.claude',
       configDirSource: 'system' as const,
     }
@@ -726,7 +728,7 @@ describe('settingsStore app mode', () => {
       appModeRequiresRestart: false,
     })
 
-    await expect(useSettingsStore.getState().setAppMode('portable', 'D:\\blocked-data'))
+    await expect(useSettingsStore.getState().setAppMode('custom', 'D:\\blocked-data'))
       .rejects.toThrow('Data storage directory is not writable')
     expect(useSettingsStore.getState().appMode).toEqual(prevAppMode)
     expect(useSettingsStore.getState().appModeRequiresRestart).toBe(false)
@@ -739,10 +741,10 @@ describe('settingsStore app mode', () => {
     const { useSettingsStore } = await import('./settingsStore')
     useSettingsStore.setState({
       appMode: {
-        mode: 'portable',
-        portableDir: 'D:\\portable-data',
+        mode: 'custom',
+        customDir: 'D:\\portable-data',
         activeConfigDir: 'D:\\portable-data',
-        configDirSource: 'portable',
+        configDirSource: 'custom',
       },
       appModeRequiresRestart: false,
     })
@@ -751,13 +753,13 @@ describe('settingsStore app mode', () => {
 
     expect(setAppMode).toHaveBeenCalledWith({
       mode: 'default',
-      portableDir: null,
+      customDir: null,
     })
     expect(useSettingsStore.getState().appMode).toEqual({
       mode: 'default',
-      portableDir: null,
+      customDir: null,
       activeConfigDir: 'D:\\portable-data',
-      configDirSource: 'portable',
+      configDirSource: 'custom',
     })
     expect(useSettingsStore.getState().appModeRequiresRestart).toBe(true)
   })

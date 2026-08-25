@@ -119,8 +119,8 @@ export function GeneralSettings() {
   const [autoDreamActionRunning, setAutoDreamActionRunning] = useState(false)
   const [modeSwitchConfirmOpen, setModeSwitchConfirmOpen] = useState(false)
   const [pendingMode, setPendingMode] = useState<AppMode | null>(null)
-  const [pendingPortableDir, setPendingPortableDir] = useState<string | null>(null)
-  const [portableDirDraft, setPortableDirDraft] = useState('')
+  const [pendingCustomDir, setPendingCustomDir] = useState<string | null>(null)
+  const [customDirDraft, setCustomDirDraft] = useState('')
   const [modeActionRunning, setModeActionRunning] = useState(false)
   const [modeError, setModeError] = useState<string | null>(null)
   const [uiZoomDraft, setUiZoomDraft] = useState(uiZoom)
@@ -140,8 +140,8 @@ export function GeneralSettings() {
   const webSearchDirty = JSON.stringify(webSearchDraft) !== JSON.stringify(webSearch)
   const uiZoomPercent = Math.round(uiZoomDraft * 100)
   const uiZoomRangeProgress = `${Math.round(((uiZoomDraft - UI_ZOOM_MIN) / (UI_ZOOM_MAX - UI_ZOOM_MIN)) * 1000) / 10}%`
-  const activeConfigDir = appMode.activeConfigDir ?? (appMode.mode === 'portable' ? appMode.portableDir : null)
-  const configDirSource = appMode.configDirSource ?? (appMode.mode === 'portable' ? 'portable' : 'system')
+  const activeConfigDir = appMode.activeConfigDir ?? (appMode.mode === 'custom' ? appMode.customDir : appMode.mode === 'portable' ? appMode.portableDataDir ?? null : null)
+  const configDirSource = appMode.configDirSource ?? (appMode.mode === 'custom' ? 'custom' : appMode.mode === 'portable' ? 'portable' : 'system')
   const isEnvironmentConfigDir = configDirSource === 'environment'
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId),
@@ -192,8 +192,8 @@ export function GeneralSettings() {
   }, [fetchAppMode])
 
   useEffect(() => {
-    setPortableDirDraft(appMode.portableDir ?? '')
-  }, [appMode.portableDir])
+    setCustomDirDraft(appMode.customDir ?? '')
+  }, [appMode.customDir])
 
   const LANGUAGES: Array<{ value: Locale; label: string }> = [
     { value: 'en', label: 'English' },
@@ -476,7 +476,7 @@ export function GeneralSettings() {
     }
   }
 
-  const openPortableDirPicker = async () => {
+  const openCustomDirPicker = async () => {
     setModeError(null)
     const host = getDesktopHost()
     if (!host.capabilities.dialogs) {
@@ -490,7 +490,7 @@ export function GeneralSettings() {
         title: t('settings.general.storageChooseDirTitle'),
       })
       if (typeof selected === 'string') {
-        setPortableDirDraft(selected)
+        setCustomDirDraft(selected)
       }
     } catch {
       setModeError(t('settings.general.storagePickerError'))
@@ -503,15 +503,15 @@ export function GeneralSettings() {
       return
     }
 
-    const portableDir = portableDirDraft.trim()
-    if (mode === 'portable' && !portableDir) {
+    const customDir = customDirDraft.trim()
+    if (mode === 'custom' && !customDir) {
       setModeError(t('settings.general.storageNoDirError'))
       return
     }
 
     setModeError(null)
     setPendingMode(mode)
-    setPendingPortableDir(mode === 'portable' ? portableDir : null)
+    setPendingCustomDir(mode === 'custom' ? customDir : null)
     setModeSwitchConfirmOpen(true)
   }
 
@@ -519,7 +519,7 @@ export function GeneralSettings() {
     if (modeActionRunning) return
     setModeSwitchConfirmOpen(false)
     setPendingMode(null)
-    setPendingPortableDir(null)
+    setPendingCustomDir(null)
   }
 
   const confirmModeSwitch = async () => {
@@ -528,7 +528,7 @@ export function GeneralSettings() {
     setModeActionRunning(true)
     setModeError(null)
     try {
-      await setAppModeAction(pendingMode, pendingPortableDir)
+      await setAppModeAction(pendingMode, pendingCustomDir)
       const host = getDesktopHost()
       await host.appMode.prepareRestart()
       await host.appMode.restart()
@@ -540,7 +540,7 @@ export function GeneralSettings() {
       )
       setModeSwitchConfirmOpen(false)
       setPendingMode(null)
-      setPendingPortableDir(null)
+      setPendingCustomDir(null)
       setModeActionRunning(false)
     }
   }
@@ -1411,9 +1411,34 @@ export function GeneralSettings() {
                 </span>
               </button>
 
+              <button
+                type="button"
+                onClick={() => {
+                  if (isEnvironmentConfigDir) {
+                    setModeError(t('settings.general.storageEnvironmentSwitchBlocked'))
+                    return
+                  }
+                  if (appMode.mode !== 'portable') {
+                    openModeSwitchConfirm('portable')
+                  }
+                }}
+                aria-pressed={appMode.mode === 'portable' && !isEnvironmentConfigDir}
+                className={`flex items-start gap-3 rounded-[var(--radius-lg)] border px-3 py-3 text-left transition-all ${
+                  appMode.mode === 'portable' && !isEnvironmentConfigDir
+                    ? 'border-[var(--color-brand)] bg-[var(--color-surface)] shadow-[var(--shadow-focus-ring)]'
+                    : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-focus)]'
+                }`}
+              >
+                <span className="material-symbols-outlined mt-0.5 text-[20px] text-[var(--color-text-secondary)]">luggage</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-[var(--color-text-primary)]">{t('settings.general.storagePortableTitle')}</span>
+                  <span className="mt-1 block text-xs leading-5 text-[var(--color-text-tertiary)]">{t('settings.general.storagePortableDescription')}</span>
+                </span>
+              </button>
+
               <div
                 className={`rounded-[var(--radius-lg)] border px-3 py-3 transition-all ${
-                  appMode.mode === 'portable' && !isEnvironmentConfigDir
+                  appMode.mode === 'custom' && !isEnvironmentConfigDir
                     ? 'border-[var(--color-brand)] bg-[var(--color-surface)] shadow-[var(--shadow-focus-ring)]'
                     : 'border-[var(--color-border)] bg-[var(--color-surface)]'
                 }`}
@@ -1421,20 +1446,20 @@ export function GeneralSettings() {
                 <div className="mb-3 flex items-start gap-3">
                   <span className="material-symbols-outlined mt-0.5 text-[20px] text-[var(--color-text-secondary)]">drive_file_move</span>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-[var(--color-text-primary)]">{t('settings.general.storagePortableTitle')}</div>
-                    <div className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">{t('settings.general.storagePortableDescription')}</div>
+                    <div className="text-sm font-semibold text-[var(--color-text-primary)]">{t('settings.general.storageCustomTitle')}</div>
+                    <div className="mt-1 text-xs leading-5 text-[var(--color-text-tertiary)]">{t('settings.general.storageCustomDescription')}</div>
                   </div>
                 </div>
 
                 <div className="flex items-end gap-2">
                   <div className="min-w-0 flex-1">
                     <Input
-                      id="portable-data-dir"
-                      label={t('settings.general.storagePortableDirLabel')}
-                      value={portableDirDraft}
-                      placeholder={t('settings.general.storagePortableDirPlaceholder')}
+                      id="custom-data-dir"
+                      label={t('settings.general.storageCustomDirLabel')}
+                      value={customDirDraft}
+                      placeholder={t('settings.general.storageCustomDirPlaceholder')}
                       onChange={(event) => {
-                        setPortableDirDraft(event.target.value)
+                        setCustomDirDraft(event.target.value)
                         setModeError(null)
                       }}
                       className="w-full font-mono text-xs"
@@ -1444,7 +1469,7 @@ export function GeneralSettings() {
                     type="button"
                     variant="secondary"
                     className="h-10 flex-shrink-0 px-3 whitespace-nowrap"
-                    onClick={() => void openPortableDirPicker()}
+                    onClick={() => void openCustomDirPicker()}
                   >
                     {t('settings.general.storageChooseDir')}
                   </Button>
@@ -1455,10 +1480,10 @@ export function GeneralSettings() {
                     type="button"
                     size="sm"
                     variant="secondary"
-                    disabled={modeActionRunning || (appMode.mode === 'portable' && portableDirDraft.trim() === (appMode.portableDir ?? ''))}
-                    onClick={() => openModeSwitchConfirm('portable')}
+                    disabled={modeActionRunning || (appMode.mode === 'custom' && customDirDraft.trim() === (appMode.customDir ?? ''))}
+                    onClick={() => openModeSwitchConfirm('custom')}
                   >
-                    {t('settings.general.storageApplyPortable')}
+                    {t('settings.general.storageApplyCustom')}
                   </Button>
                 </div>
               </div>
@@ -1507,11 +1532,13 @@ export function GeneralSettings() {
             <p>
               {pendingMode === 'portable'
                 ? t('settings.general.storageSwitchPortableBody')
-                : t('settings.general.storageSwitchDefaultBody')}
+                : pendingMode === 'custom'
+                  ? t('settings.general.storageSwitchCustomBody')
+                  : t('settings.general.storageSwitchDefaultBody')}
             </p>
-            {pendingMode === 'portable' && pendingPortableDir && (
+            {pendingMode === 'custom' && pendingCustomDir && (
               <div className="rounded-[var(--radius-lg)] bg-[var(--color-surface-container-low)] px-3 py-2 font-mono text-xs break-all text-[var(--color-text-secondary)]">
-                {pendingPortableDir}
+                {pendingCustomDir}
               </div>
             )}
             <p>{t('settings.general.storageSwitchRestartBody')}</p>

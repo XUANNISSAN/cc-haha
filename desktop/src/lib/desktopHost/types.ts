@@ -263,7 +263,7 @@ export type AppModeConfig = SettingsAppModeConfig
 
 export type AppModeSetInput = {
   mode: SettingsAppMode
-  portableDir: string | null
+  customDir: string | null
 }
 
 export type DesktopHost = {

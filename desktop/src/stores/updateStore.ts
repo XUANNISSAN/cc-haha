@@ -195,6 +195,7 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
 
   initialize: async () => {
     if (!getUpdateHost()) return
+    if (!useSettingsStore.getState().updateChecksEnabled) return
     if (!startupCheckPromise) {
       startupCheckPromise = (async () => {
         await new Promise((resolve) => setTimeout(resolve, 5000))
@@ -208,6 +209,7 @@ export const useUpdateStore = create<UpdateStore>((set, get) => ({
   },
 
   checkForUpdates: async ({ silent = false, autoDownload = true } = {}) => {
+    if (!useSettingsStore.getState().updateChecksEnabled) return null
     const host = getUpdateHost()
     if (!host) return null
     if (downloadPromise && get().status === 'downloading' && pendingUpdate) return pendingUpdate

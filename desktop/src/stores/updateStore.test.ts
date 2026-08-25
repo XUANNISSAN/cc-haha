@@ -257,6 +257,20 @@ describe('updateStore', () => {
     expect(useUpdateStore.getState().status).toBe('downloaded')
   })
 
+
+
+  it('does not contact the updater when update checks are disabled', async () => {
+    vi.resetModules()
+    const { useSettingsStore } = await import('./settingsStore')
+    useSettingsStore.setState({ updateChecksEnabled: false })
+    const { useUpdateStore } = await import('./updateStore')
+
+    await expect(useUpdateStore.getState().checkForUpdates()).resolves.toBeNull()
+
+    expect(check).not.toHaveBeenCalled()
+    expect(useUpdateStore.getState().status).toBe('idle')
+  })
+
   it('passes the configured manual update proxy to update checks', async () => {
     const update = {
       version: '0.2.0',

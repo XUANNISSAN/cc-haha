@@ -335,19 +335,19 @@ describe('Settings > General tab', () => {
       }),
       appMode: {
         mode: 'default',
-        portableDir: null,
+        customDir: null,
         activeConfigDir: '/Users/test/.claude',
         configDirSource: 'system',
       },
       appModeRequiresRestart: false,
       fetchAppMode: vi.fn().mockResolvedValue(undefined),
-      setAppMode: vi.fn().mockImplementation(async (mode: AppMode, portableDir?: string | null) => {
+      setAppMode: vi.fn().mockImplementation(async (mode: AppMode, customDir?: string | null) => {
         useSettingsStore.setState({
           appMode: {
             mode,
-            portableDir: mode === 'portable' ? portableDir ?? null : null,
-            activeConfigDir: mode === 'portable' ? portableDir ?? null : '/Users/test/.claude',
-            configDirSource: mode === 'portable' ? 'portable' : 'system',
+            customDir: mode === 'custom' ? customDir ?? null : null,
+            activeConfigDir: mode === 'custom' ? customDir ?? null : '/Users/test/.claude',
+            configDirSource: mode === 'custom' ? 'custom' : mode === 'portable' ? 'portable' : 'system',
           },
           appModeRequiresRestart: true,
         })
@@ -684,7 +684,7 @@ describe('Settings > General tab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save and Restart' }))
 
     await waitFor(() => {
-      expect(useSettingsStore.getState().setAppMode).toHaveBeenCalledWith('portable', '/Users/test/cc-haha-data')
+      expect(useSettingsStore.getState().setAppMode).toHaveBeenCalledWith('custom', '/Users/test/cc-haha-data')
       expect(tauriCoreMock.invoke).toHaveBeenCalledWith('prepare_for_app_mode_restart')
       expect(tauriProcessMock.relaunch).toHaveBeenCalledTimes(1)
     })
@@ -693,10 +693,10 @@ describe('Settings > General tab', () => {
   it('switches back to ~/.claude without deleting custom data', async () => {
     useSettingsStore.setState({
       appMode: {
-        mode: 'portable',
-        portableDir: '/Users/test/cc-haha-data',
+        mode: 'custom',
+        customDir: '/Users/test/cc-haha-data',
         activeConfigDir: '/Users/test/cc-haha-data',
-        configDirSource: 'portable',
+        configDirSource: 'custom',
       },
     })
 
@@ -705,7 +705,7 @@ describe('Settings > General tab', () => {
     fireEvent.click(screen.getByText('General'))
     fireEvent.click(screen.getByRole('button', { name: /Use system directory/ }))
 
-    expect(screen.getByText(/Data in the custom directory is not deleted/)).toBeInTheDocument()
+    expect(screen.getByText(/custom or portable directories is not deleted/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Save and Restart' }))
 
     await waitFor(() => {
@@ -745,8 +745,8 @@ describe('Settings > General tab', () => {
   it('treats external CLAUDE_CONFIG_DIR as the controlling data source', async () => {
     useSettingsStore.setState({
       appMode: {
-        mode: 'portable',
-        portableDir: '/env/claude-data',
+        mode: 'custom',
+        customDir: '/env/claude-data',
         activeConfigDir: '/env/claude-data',
         configDirSource: 'environment',
       },

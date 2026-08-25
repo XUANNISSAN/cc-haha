@@ -31,7 +31,7 @@ function noopUnlisten(): void {
 
 const defaultAppMode: AppModeConfig = {
   mode: 'default',
-  portableDir: null,
+  customDir: null,
 }
 
 const defaultPermissionState: NotificationPermissionState = 'default'

@@ -5,7 +5,7 @@ param(
 )
 
 # Environment:
-#   SKIP_INSTALL=1        Skip root/desktop dependency installation.
+#   SKIP_INSTALL=1        Skip root/adapters/desktop dependency installation.
 #   REBUILD_NATIVE=1      Rebuild Electron native dependencies before packaging.
 #   SKIP_PACKAGE_SMOKE=1  Skip static package-smoke verification after copying artifacts.
 
@@ -15,6 +15,7 @@ Set-StrictMode -Version Latest
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $desktopDir = (Resolve-Path (Join-Path $scriptDir '..')).Path
 $repoRoot = (Resolve-Path (Join-Path $desktopDir '..')).Path
+$adaptersDir = Join-Path $repoRoot 'adapters'
 
 $targetTriple = 'x86_64-pc-windows-msvc'
 $canonicalOutputDir = Join-Path $desktopDir 'build-artifacts\windows-x64'
@@ -93,6 +94,17 @@ if ($env:SKIP_INSTALL -ne '1') {
     & bun install
     if ($LASTEXITCODE -ne 0) {
       throw "[build-windows-x64] bun install failed in repo root (exit $LASTEXITCODE)"
+    }
+  } finally {
+    Pop-Location
+  }
+
+  Write-Step 'Installing adapters dependencies...'
+  Push-Location $adaptersDir
+  try {
+    & bun install
+    if ($LASTEXITCODE -ne 0) {
+      throw "[build-windows-x64] bun install failed in adapters (exit $LASTEXITCODE)"
     }
   } finally {
     Pop-Location
