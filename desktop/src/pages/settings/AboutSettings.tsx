@@ -4,6 +4,7 @@ import { useTranslation } from '../../i18n'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { Switch } from '@/components/ui/Switch'
 import type { UpdateProxyMode } from '../../types/settings'
 import { MarkdownRenderer } from '../../components/markdown/MarkdownRenderer'
 import { useUpdateStore } from '../../stores/updateStore'
@@ -36,6 +37,8 @@ export function AboutSettings() {
   const [version, setVersion] = useState('')
   const updateProxy = useSettingsStore((s) => s.updateProxy)
   const setUpdateProxy = useSettingsStore((s) => s.setUpdateProxy)
+  const updateChecksEnabled = useSettingsStore((s) => s.updateChecksEnabled)
+  const setUpdateChecksEnabled = useSettingsStore((s) => s.setUpdateChecksEnabled)
   const updateStatus = useUpdateStore((s) => s.status)
   const availableVersion = useUpdateStore((s) => s.availableVersion)
   const releaseNotes = useUpdateStore((s) => s.releaseNotes)
@@ -51,6 +54,7 @@ export function AboutSettings() {
   const [updateProxyDraft, setUpdateProxyDraft] = useState(updateProxy)
   const [updateProxySaveError, setUpdateProxySaveError] = useState<string | null>(null)
   const [isSavingUpdateProxy, setIsSavingUpdateProxy] = useState(false)
+  const [updateChecksSaveError, setUpdateChecksSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -112,6 +116,15 @@ export function AboutSettings() {
   const updateProxyDirty =
     updateProxyDraft.mode !== updateProxy.mode ||
     updateProxyDraft.url.trim() !== updateProxy.url.trim()
+
+  const toggleUpdateChecks = async (enabled: boolean) => {
+    setUpdateChecksSaveError(null)
+    try {
+      await setUpdateChecksEnabled(enabled)
+    } catch (error) {
+      setUpdateChecksSaveError(error instanceof Error ? error.message : String(error))
+    }
+  }
 
   const saveUpdateProxy = async () => {
     if (manualProxyError) {
@@ -193,9 +206,24 @@ export function AboutSettings() {
             variant="secondary"
             onClick={() => void checkForUpdates()}
             loading={updateStatus === 'checking'}
+            disabled={!updateChecksEnabled}
           >
             {t('update.checkNow')}
           </Button>
+        </div>
+
+        <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3">
+          <Switch
+            checked={updateChecksEnabled}
+            onChange={(checked) => void toggleUpdateChecks(checked)}
+            label={t('update.checksEnabled')}
+            description={t('update.checksEnabledDescription')}
+          />
+          {updateChecksSaveError && (
+            <p className="mt-2 text-[11px] leading-4 text-[var(--color-error)]">
+              {updateChecksSaveError}
+            </p>
+          )}
         </div>
 
         <div className="mt-4 rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-3">

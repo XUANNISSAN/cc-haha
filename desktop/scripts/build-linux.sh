@@ -37,7 +37,7 @@ Usage:
 Environment:
   LINUX_ARCH=x64|arm64  Target architecture. Defaults to x64.
   LINUX_TARGETS         Electron Builder Linux targets. Defaults to "AppImage deb".
-  SKIP_INSTALL=1        Skip `bun install` in the repo root and desktop app.
+  SKIP_INSTALL=1        Skip `bun install` in the repo root, adapters, and desktop app.
   REBUILD_NATIVE=1      Run `electron-builder install-app-deps` before packaging.
   SKIP_PACKAGE_SMOKE=1  Skip package-smoke verification after copying artifacts.
   OPEN_OUTPUT=1         Open the canonical artifact output directory after a successful build.
@@ -70,6 +70,9 @@ fi
 if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
   echo "[build-linux] Installing root dependencies..."
   (cd "${REPO_ROOT}" && bun install)
+
+  echo "[build-linux] Installing adapters dependencies..."
+  (cd "${REPO_ROOT}/adapters" && bun install)
 
   echo "[build-linux] Installing desktop dependencies..."
   (cd "${DESKTOP_DIR}" && bun install)

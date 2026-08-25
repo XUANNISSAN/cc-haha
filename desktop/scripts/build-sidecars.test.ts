@@ -372,6 +372,21 @@ describe('build-sidecars Windows x64 target mapping', () => {
     expect(readCliLauncher()).toContain('--feature=TRANSCRIPT_CLASSIFIER')
   })
 
+  it('installs adapter dependencies before compiling sidecars in release scripts', () => {
+    for (const relativeScript of [
+      'build-windows-x64.ps1',
+      'build-macos-arm64.sh',
+      'build-linux.sh',
+    ]) {
+      const source = readFileSync(
+        path.resolve(import.meta.dirname, relativeScript),
+        'utf8',
+      )
+      expect(source).toContain('Installing adapters dependencies')
+      expect(source).toContain('adapters')
+    }
+  })
+
   it('wires the opt-in compiled sidecar smoke into the native gate', () => {
     const desktopPackage = readJson(path.resolve(import.meta.dirname, '../package.json'))
     const rootPackage = readJson(path.resolve(import.meta.dirname, '../../package.json'))

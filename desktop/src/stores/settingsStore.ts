@@ -77,6 +77,7 @@ type SettingsStore = {
   desktopTerminal: DesktopTerminalSettings
   webSearch: WebSearchSettings
   updateProxy: UpdateProxySettings
+  updateChecksEnabled: boolean
   network: NetworkSettings
   traceCapture: TraceCaptureSettings
   h5Access: H5AccessSettings
@@ -110,6 +111,7 @@ type SettingsStore = {
   setDesktopTerminal: (settings: DesktopTerminalSettings) => Promise<void>
   setWebSearch: (settings: WebSearchSettings) => Promise<void>
   setUpdateProxy: (settings: UpdateProxySettings) => Promise<void>
+  setUpdateChecksEnabled: (enabled: boolean) => Promise<void>
   setNetwork: (settings: NetworkSettings) => Promise<void>
   setTraceCaptureEnabled: (enabled: boolean) => Promise<void>
   enableH5Access: () => Promise<string>
@@ -123,7 +125,7 @@ type SettingsStore = {
   }) => Promise<void>
   setResponseLanguage: (language: string) => Promise<void>
   fetchAppMode: () => Promise<void>
-  setAppMode: (mode: AppMode, portableDir?: string | null) => Promise<void>
+  setAppMode: (mode: AppMode, customDir?: string | null) => Promise<void>
   setUiZoom: (zoom: number) => void
 }
 
@@ -203,6 +205,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
   desktopTerminal: DEFAULT_DESKTOP_TERMINAL_SETTINGS,
   webSearch: { mode: 'auto', tavilyApiKey: '', braveApiKey: '' },
   updateProxy: DEFAULT_UPDATE_PROXY_SETTINGS,
+  updateChecksEnabled: true,
   network: DEFAULT_NETWORK_SETTINGS,
   traceCapture: DEFAULT_TRACE_CAPTURE_SETTINGS,
   h5Access: DEFAULT_H5_ACCESS_SETTINGS,
@@ -216,7 +219,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   appMode: {
     mode: 'default',
-    portableDir: null,
+    customDir: null,
     activeConfigDir: null,
     configDirSource: 'system',
   },
@@ -271,6 +274,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
         desktopTerminal,
         webSearch: normalizeWebSearchSettings(userSettings.webSearch),
         updateProxy: normalizeUpdateProxySettings(userSettings.updateProxy),
+        updateChecksEnabled: userSettings.updateChecksEnabled !== false,
         network: normalizeNetworkSettings(userSettings.network),
         traceCapture,
         h5Access: h5AccessResult.settings,
@@ -520,6 +524,17 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     }
   },
 
+  setUpdateChecksEnabled: async (enabled) => {
+    const prev = get().updateChecksEnabled
+    set({ updateChecksEnabled: enabled })
+    try {
+      await settingsApi.updateUser({ updateChecksEnabled: enabled })
+    } catch (error) {
+      set({ updateChecksEnabled: prev })
+      throw error
+    }
+  },
+
   setNetwork: async (settings) => {
     const prev = get().network
     const next = normalizeNetworkSettings(settings)
@@ -625,24 +640,26 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     } catch { /* silently ignore - not in Tauri or command unavailable */ }
   },
 
-  setAppMode: async (mode, portableDir) => {
+  setAppMode: async (mode, customDir) => {
     const host = getDesktopHost()
     if (!host.isDesktop) return
     const prev = get().appMode
-    const selectedCustomDir = mode === 'portable' ? portableDir?.trim() || null : null
-    if (mode === 'portable' && !selectedCustomDir) {
+    const selectedCustomDir = mode === 'custom' ? customDir?.trim() || null : null
+    if (mode === 'custom' && !selectedCustomDir) {
       throw new Error('Choose an absolute custom data directory')
     }
     const newMode: AppModeConfig = {
       ...prev,
       mode,
-      portableDir: selectedCustomDir,
+      customDir: selectedCustomDir,
+      activeConfigDir: prev.activeConfigDir ?? null,
+      configDirSource: prev.configDirSource,
     }
     set({ appMode: newMode, appModeRequiresRestart: true })
     try {
       await host.appMode.set({
         mode,
-        portableDir: newMode.portableDir || null,
+        customDir: newMode.customDir || null,
       })
     } catch (error) {
       set({ appMode: prev, appModeRequiresRestart: false })

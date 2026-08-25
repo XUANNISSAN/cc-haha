@@ -19,7 +19,7 @@ Usage:
   ./desktop/scripts/build-macos-arm64.sh [extra electron-builder args...]
 
 Environment:
-  SKIP_INSTALL=1   Skip `bun install` in the repo root and desktop app.
+  SKIP_INSTALL=1   Skip `bun install` in the repo root, adapters, and desktop app.
   SIGN_BUILD=1     Allow electron-builder to auto-discover signing identities.
   REBUILD_NATIVE=1 Run `electron-builder install-app-deps` before packaging.
   MAC_TARGETS      Electron Builder macOS targets. Defaults to "dmg zip".
@@ -86,6 +86,9 @@ fi
 if [[ "${SKIP_INSTALL:-0}" != "1" ]]; then
   echo "[build-macos-arm64] Installing root dependencies..."
   (cd "${REPO_ROOT}" && bun install)
+
+  echo "[build-macos-arm64] Installing adapters dependencies..."
+  (cd "${REPO_ROOT}/adapters" && bun install)
 
   echo "[build-macos-arm64] Installing desktop dependencies..."
   (cd "${DESKTOP_DIR}" && bun install)

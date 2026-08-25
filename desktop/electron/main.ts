@@ -771,6 +771,8 @@ async function createMainWindow() {
   writeWindowSmokeSnapshot(mainWindow, 'after-final-show')
 }
 
+applyStartupPortableMode(app)
+
 if (!acquireSingleInstanceLock(app, () => mainWindow)) {
   process.exit(0)
 }
@@ -779,7 +781,6 @@ registerIpcHandlers()
 
 app.whenReady().then(async () => {
   applyWindowsAppUserModelId(app)
-  applyStartupPortableMode(app)
   installSystemAppearanceWatch()
   screen.on('display-metrics-changed', (_event, _display, changedMetrics) => {
     if (changedMetrics.includes('scaleFactor') || changedMetrics.includes('bounds')) {
